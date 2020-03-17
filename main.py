@@ -1,35 +1,9 @@
 import pygame
 
+from utils import Button
 from game import run_game
+from new_hiscore import run_hiscore # Temp
 
-class Button():
-    def __init__(self, x:int, y:int, w:int, h:int, color:tuple, highlight_color:tuple, text:str, action:object=None, *action_params):
-        self.x = x
-        self.y = y
-        self.w = w
-        self.h = h
-        self.color = color
-        self.highlight_color = highlight_color
-        self.text = text
-        self.font = pygame.font.Font('freesansbold.ttf', 22)
-        self.action = action
-        self.action_params = action_params
-
-    def hover_over(self):
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-        return self.x + self.w > mouse_x > self.x and self.y + self.h > mouse_y > self.y
-
-    def press(self):
-        self.action(*self.action_params)
-
-    def draw(self, screen:pygame.Surface):
-        cur_color = self.color if self.hover_over() else self.highlight_color
-        pygame.draw.rect(screen, cur_color, (self.x, self.y, self.w, self.h))
-        rect = pygame.Rect(self.x, self.y, self.w, self.h)
-        text = self.font.render(self.text, True, (0,0,0))
-        text_rect = text.get_rect()
-        text_rect.center = ((self.x + self.w // 2), (self.y + self.h // 2))
-        screen.blit(text, text_rect)
 
 
 class Game():
@@ -59,8 +33,9 @@ if __name__ == '__main__':
     button_w = 100
     button_h = 50
     game.buttons.append(Button((game.screen_w-button_w)//2, (game.screen_h-button_h)//3, button_w, button_h, (200, 0, 0), (255,0,0), 'Play', run_game, game.screen))
-    game.buttons.append(Button((game.screen_w-button_w)//2, (game.screen_h-button_h)//2, button_w, button_h, (200, 0, 0), (255,0,0), 'Hiscores'))
     game.buttons.append(Button((game.screen_w-button_w)//2, (game.screen_h-button_h)//1.5, button_w, button_h, (200, 0, 0), (255,0,0), 'Quit', game.quit_game))
+    # Temp
+    game.buttons.append(Button((game.screen_w-button_w)//2, (game.screen_h-button_h)//2, button_w, button_h, (200, 0, 0), (255,0,0), 'Hiscores', run_hiscore, game.screen, 0))
     
     while game.running:
         playing = True

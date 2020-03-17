@@ -2,15 +2,18 @@ import pygame
 from random import randint
 from os import path
 
+from new_hiscore import run_hiscore
+
 # Framerate
 FPS = 30
 
 # Images
+bg = (0, 130, 0)
 diglett_img = pygame.image.load(path.join('images', 'diglett.png'))
 
 # Classes
 class Diglett():
-    def __init__(self, screen):
+    def __init__(self, screen:pygame.Surface):
         self.x = randint(0, screen.get_width()-130)
         self.y = randint(0, screen.get_height()-130)
         self.hitbox = (self.x, self.y, 130, 130)
@@ -21,24 +24,14 @@ class Diglett():
 
 
 class Timer():
-    game_running = True
     def __init__(self, time:int):
-        self.init_time = time
+        self.time = time
         self.font = pygame.font.Font('freesansbold.ttf', 18)
-        self.reset_timer()
     
-    def manage_timer(self, frame_count:int):
-        if frame_count % FPS == 0:
+    def count_down(self, frame_count:int):
+        if frame_count == FPS:
             self.time -= 1
-            print(self.time)
-            return 0
-        if self.time == 0:
-            Timer.game_running = False
-        return frame_count
 
-    def reset_timer(self):
-        self.time = self.init_time
-    
     def draw(self, win:pygame.Surface):
         text = self.font.render(f'Time: {str(self.time)}', True, (255,255,255))
         text_rect = text.get_rect()
@@ -60,21 +53,20 @@ class Player():
         win.blit(text, text_rect)
 
     def whack(self, coords:tuple, digletts:list):
-        x, y = coords
+        x, y, *_ = coords
         for diglett in digletts:
-            if x < diglett.hitbox[0]+diglett.hitbox[2] and x > diglett.hitbox[0]:
-                if y > diglett.hitbox[1] and y < diglett.hitbox[1]+diglett.hitbox[3]:
-                    # Diglett whacked
-                    digletts.remove(diglett)
-                    self.increase_score(10)
+            if diglett.hitbox[0] + diglett.hitbox[2] > x > diglett.hitbox[0] and diglett.hitbox[1] + diglett.hitbox[3] > y > diglett.hitbox[1]:
+                # Diglett whacked
+                digletts.remove(diglett)
+                self.increase_score(10)
 
 # General functions
-def redraw_gamewindow(screen:pygame.Surface, bg:tuple, digletts:list, player:Player, timer:Timer):
+def redraw_gamewindow(screen:pygame.Surface, digletts:list, player:Player, timer:Timer):
     screen.fill(bg)
     for diglett in digletts:
-        diglett.draw(screen)
         if diglett.timer.time <= 0:
             digletts.remove(diglett)
+        diglett.draw(screen)
     timer.draw(screen)
     player.draw(screen)
     pygame.display.update()
@@ -83,11 +75,8 @@ def redraw_gamewindow(screen:pygame.Surface, bg:tuple, digletts:list, player:Pla
 # Exported function
 def run_game(screen:pygame.Surface):
     # Initial stuff
-    # pygame.init()
     clock = pygame.time.Clock()
-
-    # Images
-    bg = (0, 130, 0)
+    game_running = True
     
     # Variable initialization
     digletts = []
@@ -96,13 +85,20 @@ def run_game(screen:pygame.Surface):
     timer = Timer(5)
     
     # Game Loop
-    while Timer.game_running:
+    while game_running:
         clock.tick(FPS)
+        
+        # Check game ending
         frame_count += 1
-        frame_count = timer.manage_timer(frame_count)
+        timer.count_down(frame_count)
+        if timer.time == 0:
+            game_running = False
 
+        # Spawn Digletts
         if randint(1, FPS) == 1:
             digletts.append(Diglett(screen))
+        for diglett in digletts:
+            diglett.timer.count_down(frame_count)
 
         # Event handling
         for e in pygame.event.get():
@@ -113,4 +109,10 @@ def run_game(screen:pygame.Surface):
                     player.whack(pygame.mouse.get_pos(), digletts)
                 # if e.button == 3:
                 #     digletts.clear()
-        redraw_gamewindow(screen, bg, digletts, player, timer)
+        
+        # Reset frame count for good measure
+        if frame_count == FPS:
+            frame_count = 0
+        redraw_gamewindow(screen, digletts, player, timer)
+    run_hiscore(screen, player.score)
+    
